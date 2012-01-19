@@ -1,0 +1,28 @@
+This is the firmware for the Tequila Sunrise Bot.
+
+This contraption makes tequila sunrise drinks. To make a drink:
+
+1.  Place a cup under the spout. Make sure the black hoses are aimed into the cup!
+2.  Press the normal button to make a regular strength tequila sunrise drink or 
+    press the strong button to make a stronger tequila sunride drink.
+3.  Wait for your drink to be made. Once all three motors stop, your drink is ready! 
+    Bottoms up!
+
+What if you don’t like tequila sunrise drinks? Please hack this bot to have it make 
+another drink! Scan the QR code to go to GitHub where you can download the source code 
+for the bot. We have avrlibc code and a Arduino sketch for you to work with. Pick your 
+poison!
+
+The code is not very long and well documented. Give it a quick look see, then hack 
+new proportions for your new drink. There is a programmer attached to the bot so you 
+can program the Ardunio Uno yourself.
+
+If you hack the bot, you’re responsible for buying new booze and setting it up. We 
+recommend running water through the hoses and rinsing off the hoses before you setup 
+you own drinks. 
+
+Have fun!
+Sincerely,
+
+    The Party Robotics Team!
+    http://partyrobotics.com
