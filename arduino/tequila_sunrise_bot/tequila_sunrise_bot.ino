@@ -1,10 +1,68 @@
 
-// 
-// Copyright (c) Party Robotics LLC 2012
-// Written by Robert Kaye <rob@partyrobotics.com>
-//
+/* 
+   Copyright (c) Party Robotics LLC 2012
+   Written by Robert Kaye <rob@partyrobotics.com>
+
+Welcome hacker!
+
+Not liking what the bot is churning out right now?
+
+GOOD! Read on!
+
+The tequila sunrise bot is nothing more than three peristaltic pumps, each 
+independently driven by a motor. How long the pumps run while making a drink, 
+determines how much of each ingredient is dispensed. To make a tequila sunrise 
+you need to dispense:
+
+- grenadine for 3560 milliseconds, equivalent to 1 part
+- tequila for 10680 milliseconds, equivalent to 3 parts
+- orange juice for 21360 milliseconds, equivalent to 6 parts
+
+Down below is the definition of our drinks -- those initializers define the 
+drinks. And there are two drinks: normal and STRONG. You get to decide on 
+durations for each of these two drinks.
+
+In order to deploy the bot for your bidding, you'll need to get the required 
+booze. Please run water through the lines before you start making your new drinks.
+
+Have fun!
+
+*/
 
 #include "defs.h"
+
+// ---------------------------------------------
+// Drink definition. HACK ME!
+// ---------------------------------------------
+
+// the proportions of the drink expressed in ms of motoro run time
+static motor_command drinks[2][3] =
+{
+    { // Normal
+        { 0, 21360 },  // OJ
+        { 1, 10680 },  // tequila
+        { 2, 3560 }    // grenadine
+
+    },
+    { // Strong
+        { 0, 19150 },  // OJ
+        { 1, 12770 },  // tequila
+        { 2, 3830 }    // grenadine
+    }
+};
+
+// ---------------------------------------------
+// End of easily hackable section
+// ---------------------------------------------
+
+// ---------------------------------------------
+// Print debug output to the serial port.
+// ---------------------------------------------
+
+// Set this to 0 before deploying. Sometimes the arduino will wait until a 
+// USB cable is connected to start running. 
+#define DEBUG 0
+
 // ---------------------------------------------
 // defintions for the TSB motors
 // ---------------------------------------------
@@ -14,10 +72,12 @@ const int motor_count = 3;
 // debugging support stuff
 // ---------------------------------------------
 
+
 #define MAX 80
 // debugging printf function. Max MAX characters per line!!
 void dprintf(const char *fmt, ...)
 {
+#if DEBUG
     va_list va;
     va_start (va, fmt);
     char buffer[MAX];
@@ -25,23 +85,8 @@ void dprintf(const char *fmt, ...)
     vsnprintf(buffer, MAX, fmt, va);
     va_end (va);
     Serial.print(buffer);
+#endif
 }
-
-
-// the proportions of the drink expressed in ms of motoro run time
-static motor_command drinks[2][3] =
-{
-    { // Normal
-        { 0, 3560 },  // grenadine
-        { 1, 21360 }, // tequila
-        { 2, 10680 }  // OJ
-    },
-    { // Strong
-        { 0, 3830 },  // grenadine
-        { 1, 19150 }, // tequila
-        { 2, 12770 }  // OJ
-    }
-};
 
 // ---------------------------------------------
 // TSB driver code
@@ -94,6 +139,19 @@ void make_drink(uint8_t count, motor_command *cmds)
             delay(d);
             duration -= d;
             t += d;
+            
+            // If the button is pressed during dispense, STOP!
+            if (digitalRead(2) == LOW || digitalRead(3) == LOW)
+            {
+                digitalWrite(8, LOW);
+                digitalWrite(9, LOW);
+                digitalWrite(10, LOW);
+                
+                // Wait until no more buttons are pressed
+                while(digitalRead(2) == LOW || digitalRead(3) == LOW)
+                     ; 
+                return;
+            }
         }
         if (cmds[i].motor == 0)
             digitalWrite(8, LOW);
@@ -106,7 +164,9 @@ void make_drink(uint8_t count, motor_command *cmds)
 
 void setup()
 {
+#if DEBUG
     Serial.begin(38400);
+#endif
 
     // Set motor pins as outputs
     pinMode(8, OUTPUT); 
@@ -121,19 +181,27 @@ void setup()
 }   
     
 void loop()
-{
-
+{    
     dprintf("\nTequila Sunrise bot. What shall be your bidding?\n\n");
     for(;;)
     {
+        // Let everything settle, avoid bouncy startups
+        delay(100);
         if (digitalRead(2) == LOW)
         {
+            // wait for the button to be depressed         
+            while(digitalRead(2) == LOW)
+                     ; 
+                     
             dprintf("making normal drink\n");
             make_drink(3, drinks[0]);
             dprintf("drink complete. bottoms up!\n");
         }
         if (digitalRead(3) == LOW)
         {
+            // wait for the button to be depressed         
+            while(digitalRead(3) == LOW)
+                     ; 
             dprintf("making strong drink\n");
             make_drink(3, drinks[1]);
             dprintf("drink complete. bottoms up!\n");
