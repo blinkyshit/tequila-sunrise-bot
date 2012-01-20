@@ -24,6 +24,11 @@ durations for each of these two drinks.
 
 In order to deploy the bot for your bidding, you'll need to get the required 
 booze. Please run water through the lines before you start making your new drinks.
+To prime the pumps, press both buttons at the same time. This will run the
+pumps until you let go of the buttons. 
+
+Extra credit: Fix up the code us to use proportions and drink sizes not just
+durations. I ran out of time to make that happen. :)
 
 Have fun!
 
@@ -92,6 +97,20 @@ void dprintf(const char *fmt, ...)
 // TSB driver code
 // ---------------------------------------------
 
+void stop_all()
+{
+    digitalWrite(8, LOW);
+    digitalWrite(9, LOW);
+    digitalWrite(10, LOW);
+}
+
+void start_all()
+{
+    digitalWrite(8, HIGH);
+    digitalWrite(9, HIGH);
+    digitalWrite(10, HIGH);
+}
+
 // compare function for qsort. Sorts by duration
 int compare(const void *a, const void *b)
 {
@@ -112,15 +131,17 @@ void make_drink(uint8_t count, motor_command *cmds)
     qsort(cmds, count, sizeof(motor_command), compare);
 
     for(i = 0; i < count; i++)
-        dprintf("%05u: motor %d on, %u ms\n", t, cmds[i].motor, cmds[i].duration);
+        dprintf("motor %d on, %u ms\n", cmds[i].motor, cmds[i].duration);
     
     // turn motors on
     for(i = 0; i < count; i++)
     {
         if (cmds[i].motor == 0)
             digitalWrite(8, HIGH);
+
         if (cmds[i].motor == 1)
             digitalWrite(9, HIGH);
+
         if (cmds[i].motor == 2)
             digitalWrite(10, HIGH);
     }
@@ -143,9 +164,7 @@ void make_drink(uint8_t count, motor_command *cmds)
             // If the button is pressed during dispense, STOP!
             if (digitalRead(2) == LOW || digitalRead(3) == LOW)
             {
-                digitalWrite(8, LOW);
-                digitalWrite(9, LOW);
-                digitalWrite(10, LOW);
+                stop_all();
                 
                 // Wait until no more buttons are pressed
                 while(digitalRead(2) == LOW || digitalRead(3) == LOW)
@@ -154,11 +173,20 @@ void make_drink(uint8_t count, motor_command *cmds)
             }
         }
         if (cmds[i].motor == 0)
+        {
             digitalWrite(8, LOW);
+            dprintf("motor %d off\n", cmds[i].motor);
+        }            
         if (cmds[i].motor == 1)
+        {
             digitalWrite(9, LOW);
+            dprintf("motor %d off\n", cmds[i].motor);
+        }            
         if (cmds[i].motor == 2)
+        {
             digitalWrite(10, LOW);
+            dprintf("motor %d off\n", cmds[i].motor);
+        }            
     }
 }
 
@@ -180,8 +208,23 @@ void setup()
     digitalWrite(3, HIGH);
 }   
     
+//run all motors to clean the lines
+void clean()
+{
+    dprintf("cleaning!\n");
+    start_all();
+    while(digitalRead(2) == LOW && digitalRead(3) == LOW)
+        ;
+    stop_all();
+    dprintf("done cleaning! wait 2 seconds\n");
+    delay(2000);
+    dprintf("ready!\n");
+}
+   
 void loop()
 {    
+    uint8_t cleaned = 0;
+    
     dprintf("\nTequila Sunrise bot. What shall be your bidding?\n\n");
     for(;;)
     {
@@ -189,22 +232,40 @@ void loop()
         delay(100);
         if (digitalRead(2) == LOW)
         {
+            cleaned = 0;
             // wait for the button to be depressed         
             while(digitalRead(2) == LOW)
-                     ; 
-                     
-            dprintf("making normal drink\n");
-            make_drink(3, drinks[0]);
-            dprintf("drink complete. bottoms up!\n");
+                 if (digitalRead(3) == LOW)
+                 {
+                      clean();
+                      cleaned = 1;
+                 }
+                 
+            if (!cleaned)
+            {  
+                dprintf("making normal drink\n");
+                make_drink(3, drinks[0]);
+                dprintf("drink complete. bottoms up!\n");
+            }
         }
         if (digitalRead(3) == LOW)
         {
             // wait for the button to be depressed         
+            cleaned = 0;
+            // wait for the button to be depressed         
             while(digitalRead(3) == LOW)
-                     ; 
-            dprintf("making strong drink\n");
-            make_drink(3, drinks[1]);
-            dprintf("drink complete. bottoms up!\n");
+                 if (digitalRead(2) == LOW)
+                 {
+                      clean();
+                      cleaned = 1;
+                 }
+                 
+            if (!cleaned)
+            {     
+                 dprintf("making strong drink\n");
+                 make_drink(3, drinks[1]);
+                 dprintf("drink complete. bottoms up!\n");
+            }
         }
     }
 }
