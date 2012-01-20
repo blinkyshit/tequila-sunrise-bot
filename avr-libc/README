@@ -1,1 +1,4 @@
-The avr-libc version of the code is not quite up-to-date. Please use the Ardunio version for now.
+This version can be compiled with avr-glic, avr-gcc and avrdude. The makefile does it all
+for you.
+
+Good luck!

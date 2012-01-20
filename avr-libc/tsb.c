@@ -49,11 +49,11 @@ Have fun!
 // ---------------------------------------------
 // Drink definition. HACK ME!
 // ---------------------------------------------
-struct motor_command
+typedef struct 
 {
      int8_t   motor;
      uint16_t duration;
-};
+} motor_command;
 
 // the proportions of the drink expressed in ms of motor run time
 static motor_command drinks[2][3] =
@@ -210,7 +210,8 @@ void make_drink(uint8_t count, motor_command *cmds)
             uint8_t j;
             uint8_t d = duration > 10 ? 10 : duration;
 
-            delay(d);
+            for(j = 0; j < d; j++)
+                _delay_ms(1);
             duration -= d;
             t += d;
             
@@ -243,34 +244,16 @@ void make_drink(uint8_t count, motor_command *cmds)
     }
 }
 
-void setup()
-{
-#if DEBUG
-    
-#endif
-
-    // Set motor pins as outputs
-    pinMode(8, OUTPUT); 
-    pinMode(9, OUTPUT); 
-    pinMode(10, OUTPUT); 
-
-    // set the input pins and enable the pull up resistors
-    pinMode(2, INPUT); 
-    pinMode(3, INPUT); 
-    digitalWrite(2, HIGH);
-    digitalWrite(3, HIGH);
-}   
-    
 //run all motors to clean the lines
 void clean()
 {
     dprintf("cleaning!\n");
     start_all();
-    while(digitalRead(2) == LOW && digitalRead(3) == LOW)
+    while(get_pin(PIND2) && get_pin(PIND3))
         ;
     stop_all();
     dprintf("done cleaning! wait 2 seconds\n");
-    delay(2000);
+    _delay_ms(2000);
     dprintf("ready!\n");
 }
    
@@ -278,8 +261,9 @@ int main(void)
 {    
     uint8_t cleaned = 0;
 
-    setup();
+#if DEBUG
     serial_init();
+#endif
 
     // set pwm pins as outputs
     DDRB |= (1<<PB0)|(1<<PB1)|(1<<PB2);
@@ -292,7 +276,7 @@ int main(void)
     for(;;)
     {
         // Let everything settle, avoid bouncy startups
-        delay(100);
+        _delay_ms(100);
         if (get_pin(PIND2))
         {
             cleaned = 0;
