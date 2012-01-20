@@ -4,17 +4,11 @@
 // Written by Robert Kaye <rob@partyrobotics.com>
 //
 
+#include "defs.h"
 // ---------------------------------------------
 // defintions for the TSB motors
 // ---------------------------------------------
 const int motor_count = 3;
-class motor_cmd
-{
-    public:
-    
-        int8_t   motor;
-        uint16_t duration;
-};
 
 // ---------------------------------------------
 // debugging support stuff
@@ -30,23 +24,22 @@ void dprintf(const char *fmt, ...)
     char *ptr = buffer;
     vsnprintf(buffer, MAX, fmt, va);
     va_end (va);
-    Serial.println(buffer);
+    Serial.print(buffer);
 }
 
 
-
 // the proportions of the drink expressed in ms of motoro run time
-static motor_cmd drinks[2][3] =
+static motor_command drinks[2][3] =
 {
     { // Normal
-        { 0, 3560 },
-        { 1, 21360 },
-        { 2, 10680 }
+        { 0, 3560 },  // grenadine
+        { 1, 21360 }, // tequila
+        { 2, 10680 }  // OJ
     },
     { // Strong
-        { 0, 3830 },
-        { 1, 19150 },
-        { 2, 12770 }
+        { 0, 3830 },  // grenadine
+        { 1, 19150 }, // tequila
+        { 2, 12770 }  // OJ
     }
 };
 
@@ -57,12 +50,12 @@ static motor_cmd drinks[2][3] =
 // compare function for qsort. Sorts by duration
 int compare(const void *a, const void *b)
 {
-    return ((motor_cmd *)a)->duration > ((motor_cmd *)b)->duration;
+    return ((motor_command *)a)->duration > ((motor_command *)b)->duration;
 }
 
 // call this function to make a drink. You must pass in up to 
-// MOTOR_COUNT (3) number of motor_cmds
-void make_drink(uint8_t count, motor_cmd *cmds)
+// MOTOR_COUNT (3) number of motor_commands
+void make_drink(uint8_t count, motor_command *cmds)
 {
     uint8_t  i;
     uint16_t t = 0, duration;
@@ -71,10 +64,10 @@ void make_drink(uint8_t count, motor_cmd *cmds)
         return;
 
     // sort by duration
-//    qsort(cmds, count, sizeof(motor_cmd), compare);
+    qsort(cmds, count, sizeof(motor_command), compare);
 
-//    for(i = 0; i < count; i++)
-//        dprintf("%05u: motor %d on, %u ms\n", t, cmds[i].motor, cmds[i].duration);
+    for(i = 0; i < count; i++)
+        dprintf("%05u: motor %d on, %u ms\n", t, cmds[i].motor, cmds[i].duration);
     
     // turn motors on
     for(i = 0; i < count; i++)
@@ -136,13 +129,13 @@ void loop()
         if (digitalRead(2) == LOW)
         {
             dprintf("making normal drink\n");
-            //make_drink(3, drinks[0]);
+            make_drink(3, drinks[0]);
             dprintf("drink complete. bottoms up!\n");
         }
         if (digitalRead(3) == LOW)
         {
             dprintf("making strong drink\n");
-            //make_drink(3, drinks[1]);
+            make_drink(3, drinks[1]);
             dprintf("drink complete. bottoms up!\n");
         }
     }
