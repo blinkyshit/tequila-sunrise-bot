@@ -65,7 +65,8 @@ static motor_command drinks[2][3] =
 
 // Set this to 0 before deploying. Sometimes the arduino will wait until a 
 // USB cable is connected to start running. 
-#define DEBUG 0
+// For remote control mode, we need to have this set to 1
+#define DEBUG 1
 
 // ---------------------------------------------
 // defintions for the TSB motors
@@ -206,65 +207,55 @@ void setup()
     digitalWrite(2, HIGH);
     digitalWrite(3, HIGH);
 }   
-    
-//run all motors to clean the lines
-void clean()
-{
-    dprintf("cleaning!\n");
-    start_all();
-    while(digitalRead(2) == LOW && digitalRead(3) == LOW)
-        ;
-    stop_all();
-    dprintf("done cleaning! wait 2 seconds\n");
-    delay(2000);
-    dprintf("ready!\n");
-}
    
 void loop()
 {    
+    char cmd[32];
+    uint8_t i = 0;
     uint8_t cleaned = 0;
     
     dprintf("\nTequila Sunrise bot. What shall be your bidding?\n\n");
     for(;;)
     {
-        // Let everything settle, avoid bouncy startups
-        delay(100);
-        if (digitalRead(2) == LOW)
+        cmd[0] = 0;
+        i = 0;
+        for(;;)
         {
-            cleaned = 0;
-            // wait for the button to be depressed         
-            while(digitalRead(2) == LOW)
-                 if (digitalRead(3) == LOW)
-                 {
-                      clean();
-                      cleaned = 1;
-                 }
-                 
-            if (!cleaned)
-            {  
-                dprintf("making normal drink\n");
-                make_drink(3, drinks[0]);
-                dprintf("drink complete. bottoms up!\n");
+            if (Serial.available()) 
+            {
+                char ch = Serial.read();
+                cmd[i++] = ch;
+                cmd[i] = 0;
+                if (ch == '\n')
+                    break;
             }
         }
-        if (digitalRead(3) == LOW)
+        dprintf("Cmd: '%s'", cmd);
+        if (strncmp(cmd, "normal", 6) == 0)
         {
-            // wait for the button to be depressed         
-            cleaned = 0;
-            // wait for the button to be depressed         
-            while(digitalRead(3) == LOW)
-                 if (digitalRead(2) == LOW)
-                 {
-                      clean();
-                      cleaned = 1;
-                 }
-                 
-            if (!cleaned)
-            {     
-                 dprintf("making strong drink\n");
-                 make_drink(3, drinks[1]);
-                 dprintf("drink complete. bottoms up!\n");
-            }
+              dprintf("making normal drink\n");
+              make_drink(3, drinks[0]);
+              dprintf("drink complete. bottoms up!\n");
+              continue;
+        }
+        if (strncmp(cmd, "strong", 6) == 0)
+        {
+              dprintf("making string drink\n");
+              make_drink(3, drinks[1]);
+              dprintf("drink complete. bottoms up!\n");
+              continue;
+        }
+        if (strncmp(cmd, "run", 3) == 0)
+        {
+              dprintf("Running all motors!\n");
+              start_all();
+              continue;
+        }
+        if (strncmp(cmd, "stop", 4) == 0)
+        {
+              dprintf("Stopping all motors!\n");
+              stop_all();
+              continue;
         }
     }
 }
